@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 # set path
-voc_dir = '../../data/Pascal/VOCdevkit/VOC2012/'
+voc_dir = '/home/steven/Documents/Python/data/Pascal/VOCdevkit/VOC2012/'
 seg_dir = os.path.join(voc_dir, 'SegmentationClassAug')
 trainaug_path = os.path.join(voc_dir, 'ImageSets', 'Segmentation', 'trainaug.txt')
 trainval_path = os.path.join(voc_dir, 'ImageSets', 'Segmentation', 'trainval.txt')

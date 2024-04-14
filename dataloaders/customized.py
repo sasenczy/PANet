@@ -10,6 +10,7 @@ import numpy as np
 
 from .pascal import VOC
 from .coco import COCOSeg
+from.SSSdata import SHIP
 from .common import PairedDataset
 
 
@@ -257,4 +258,51 @@ def coco_fewshot(base_dir, split, transforms, to_tensor, labels, n_ways, n_shots
                                 pair_based_transforms=[
                                     (fewShot, {'n_ways': n_ways, 'n_shots': n_shots,
                                                'cnt_query': cnt_query, 'coco': True})])
+    return paired_data
+
+def ship_fewshot(base_dir, label_dir, transforms, to_tensor, labels, n_ways, n_shots, max_iters,
+                n_queries=1):
+    """
+    Args:
+        base_dir:
+            SHIP dataset directory
+        split:
+            which split to use
+            choose from ('train', 'val', 'trainval', 'trainaug')
+        transform:
+            transformations to be performed on images/masks
+        to_tensor:
+            transformation to convert PIL Image to tensor
+        labels:
+            object class labels of the data
+        n_ways:
+            n-way few-shot learning, should be no more than # of object class labels
+        n_shots:
+            n-shot few-shot learning
+        max_iters:
+            number of pairs
+        n_queries:
+            number of query images
+    """
+    ship = SHIP(img_dir=base_dir, lbl_dir = label_dir, transform=transforms)
+    ship.add_attrib('basic', attrib_basic, {})
+
+    # Load image ids for each class
+    sub_ids = []
+    for label in labels:
+        with open(os.path.join(ship._id_dir, ship.split,
+                               'class{}.txt'.format(label)), 'r') as f:
+            sub_ids.append(f.read().splitlines())
+    # Create sub-datasets and add class_id attribute
+    subsets = ship.subsets(sub_ids, [{'basic': {'class_id': cls_id}} for cls_id in labels])
+
+    # Choose the classes of queries
+    cnt_query = np.bincount(random.choices(population=range(n_ways), k=n_queries), minlength=n_ways)
+    # Set the number of images for each class
+    n_elements = [n_shots + x for x in cnt_query]
+    # Create paired dataset
+    paired_data = PairedDataset(subsets, n_elements=n_elements, max_iters=max_iters, same=False,
+                                pair_based_transforms=[
+                                    (fewShot, {'n_ways': n_ways, 'n_shots': n_shots,
+                                               'cnt_query': cnt_query})])
     return paired_data

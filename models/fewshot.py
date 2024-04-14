@@ -83,6 +83,8 @@ class FewShotSeg(nn.Module):
 
             ###### Compute the distance ######
             prototypes = [bg_prototype,] + fg_prototypes
+            #print(torch.Tensor.size(qry_fts))
+            #print((prototypes))
             dist = [self.calDist(qry_fts[:, epi], prototype) for prototype in prototypes]
             pred = torch.stack(dist, dim=1)  # N x (1 + Wa) x H' x W'
             outputs.append(F.interpolate(pred, size=img_size, mode='bilinear'))
@@ -108,6 +110,9 @@ class FewShotSeg(nn.Module):
             prototype: prototype of one semantic class
                 expect shape: 1 x C
         """
+        #dist = F.cosine_similarity(fts, prototype[..., None, None], dim=1) * scaler
+        #print(torch.Tensor.size(fts))
+        #print(torch.Tensor.size(prototype))
         dist = F.cosine_similarity(fts, prototype[..., None, None], dim=1) * scaler
         return dist
 
@@ -121,8 +126,10 @@ class FewShotSeg(nn.Module):
             mask: binary mask, expect shape: 1 x H x W
         """
         fts = F.interpolate(fts, size=mask.shape[-2:], mode='bilinear')
-        masked_fts = torch.sum(fts * mask[None, ...], dim=(2, 3)) \
+        #fts = F.interpolate(fts, size=[1,3, 256,256], mode='bilinear')
+        masked_fts = torch.sum(fts * (mask[None, ...]), dim=(2, 3)) \
             / (mask[None, ...].sum(dim=(2, 3)) + 1e-5) # 1 x C
+        #print(torch.Tensor.size(masked_fts))
         return masked_fts
 
 
@@ -137,8 +144,12 @@ class FewShotSeg(nn.Module):
                 expect shape: Wa x Sh x [1 x C]
         """
         n_ways, n_shots = len(fg_fts), len(fg_fts[0])
+        #print(len(fg_fts))
+        #print(len(fg_fts[0]))
         fg_prototypes = [sum(way) / n_shots for way in fg_fts]
         bg_prototype = sum([sum(way) / n_shots for way in bg_fts]) / n_ways
+        #print(torch.Tensor.size(fg_prototypes))
+        #print(len(bg_prototype))
         return fg_prototypes, bg_prototype
 
 

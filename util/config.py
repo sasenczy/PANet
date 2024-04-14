@@ -33,13 +33,13 @@ def cfg():
 
     if mode == 'train':
         dataset = 'VOC'  # 'VOC' or 'COCO' of 'SHIP'
-        n_steps = 500
+        n_steps = 300
         label_sets = 0
         batch_size = 1
         lr_milestones = [100, 200, 300]
         align_loss_scaler = 1
         ignore_label = 255
-        print_interval = 100
+        print_interval = 10
         save_pred_every = 100
 
         model = {
@@ -61,10 +61,8 @@ def cfg():
     elif mode == 'test':
         notrain = False
         snapshot = './runs/Trained_sets0[test]/VOC_1way5shot_set0.pth'
-        #snapshot = '/home/steven/Documents/Python/Project/PANet/runs/PANet_VOC_sets_0_1way_1shot_[train]/36/snapshots/300.pth'
-        #snapshot = '/home/steven/Documents/Python/Project/PANet/runs/PANet_VOC_sets_0_1way_1shot_[train]/57/snapshots/500.pth'  
         n_runs = 2
-        n_steps = 1000
+        n_steps = 100
         batch_size = 1
         scribble_dilation = 0
         bbox = False

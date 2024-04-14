@@ -11,7 +11,7 @@ import torch.backends.cudnn as cudnn
 from torchvision.transforms import Compose
 
 from models.fewshot import FewShotSeg
-from dataloaders.customized import voc_fewshot, coco_fewshot
+from dataloaders.customized import voc_fewshot, coco_fewshot, ship_fewshot
 from dataloaders.transforms import RandomMirror, Resize, ToTensorNormalize
 from util.utils import set_seed, CLASS_LABELS
 from config import ex
@@ -47,6 +47,8 @@ def main(_run, _config, _log):
         make_data = voc_fewshot
     elif data_name == 'COCO':
         make_data = coco_fewshot
+    elif data_name == 'SHIP':
+        make_data = ship_fewshot
     else:
         raise ValueError('Wrong config for dataset!')
     labels = CLASS_LABELS[data_name][_config['label_sets']]
@@ -54,6 +56,7 @@ def main(_run, _config, _log):
                           RandomMirror()])
     dataset = make_data(
         base_dir=_config['path'][data_name]['data_dir'],
+        #label_dir=_config['path'][data_name]['label_dir'],
         split=_config['path'][data_name]['data_split'],
         transforms=transforms,
         to_tensor=ToTensorNormalize(),
@@ -73,9 +76,10 @@ def main(_run, _config, _log):
     )
 
     _log.info('###### Set optimizer ######')
-    optimizer = torch.optim.SGD(model.parameters(), **_config['optim'])
-    scheduler = MultiStepLR(optimizer, milestones=_config['lr_milestones'], gamma=0.1)
-    criterion = nn.CrossEntropyLoss(ignore_index=_config['ignore_label'])
+    #optimizer = torch.optim.SGD(model.parameters(), **_config['optim'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=0.0005)
+    scheduler = MultiStepLR(optimizer, milestones=[10000, 20000, 30000], gamma=0.1)
+    criterion = nn.CrossEntropyLoss(ignore_index=255)
 
     i_iter = 0
     log_loss = {'loss': 0, 'align_loss': 0}
@@ -99,7 +103,7 @@ def main(_run, _config, _log):
         query_pred, align_loss = model(support_images, support_fg_mask, support_bg_mask,
                                        query_images)
         query_loss = criterion(query_pred, query_labels)
-        loss = query_loss + align_loss * _config['align_loss_scaler']
+        loss = query_loss + align_loss * 1
         loss.backward()
         optimizer.step()
         scheduler.step()
@@ -114,12 +118,12 @@ def main(_run, _config, _log):
 
 
         # print loss and take snapshots
-        if (i_iter + 1) % _config['print_interval'] == 0:
+        if (i_iter + 1) % 100 == 0:
             loss = log_loss['loss'] / (i_iter + 1)
             align_loss = log_loss['align_loss'] / (i_iter + 1)
             print(f'step {i_iter+1}: loss: {loss}, align_loss: {align_loss}')
 
-        if (i_iter + 1) % _config['save_pred_every'] == 0:
+        if (i_iter + 1) % 10000 == 0:
             _log.info('###### Taking snapshot ######')
             torch.save(model.state_dict(),
                        os.path.join(f'{_run.observers[0].dir}/snapshots', f'{i_iter + 1}.pth'))

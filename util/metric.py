@@ -14,7 +14,7 @@ class Metric(object):
         n_runs:
             number of test runs
     """
-    def __init__(self, max_label=20, n_runs=None):
+    def __init__(self, max_label=1, n_runs=None):
         self.labels = list(range(max_label + 1))  # all class labels
         self.n_runs = 1 if n_runs is None else n_runs
 

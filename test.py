@@ -85,7 +85,6 @@ def main(_run, _config, _log):
                                     num_workers=1, pin_memory=True, drop_last=False)
             _log.info(f"Total # of Data: {len(dataset)}")
 
-
             for sample_batched in tqdm.tqdm(testloader):
                 if _config['dataset'] == 'COCO':
                     label_ids = [coco_cls_ids.index(x) + 1 for x in sample_batched['class_ids']]

@@ -53,7 +53,7 @@ class Resize(object):
         else:
             label = tr_F.resize(label, self.size, interpolation=Image.NEAREST)
         inst = tr_F.resize(inst, self.size, interpolation=Image.NEAREST)
-        scribble = tr_F.resize(scribble, self.size, interpolation=Image.ANTIALIAS)
+        scribble = tr_F.resize(scribble, self.size, interpolation=Image.LANCZOS)
 
         sample['image'] = img
         sample['label'] = label
@@ -90,6 +90,7 @@ class ToTensorNormalize(object):
         inst, scribble = sample['inst'], sample['scribble']
         img = tr_F.to_tensor(img)
         img = tr_F.normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        #img = tr_F.normalize(img, mean=0.485, std=0.3)
         if isinstance(label, dict):
             label = {catId: torch.Tensor(np.array(x)).long()
                      for catId, x in label.items()}
